@@ -1,0 +1,69 @@
+/*==============================================================
+  Create Data Warehouse Database
+  Description:
+      - Checks if the database already exists.
+      - Creates the database if it does not exist.
+      - Creates Bronze, Silver, and Gold schemas.
+==============================================================*/
+
+-- Switch to the master database
+USE master;
+GO
+
+---------------------------------------------------------------
+-- Create the database only if it does not already exist
+---------------------------------------------------------------
+IF DB_ID('DataWarehouse') IS NULL
+BEGIN
+    CREATE DATABASE DataWarehouse;
+    PRINT 'Database "DataWarehouse" created successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'Database "DataWarehouse" already exists.';
+END
+GO
+
+---------------------------------------------------------------
+-- Switch to the DataWarehouse database
+---------------------------------------------------------------
+USE DataWarehouse;
+GO
+
+---------------------------------------------------------------
+-- Create Bronze Schema
+-- Stores raw data imported directly from source systems.
+---------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'bronze')
+BEGIN
+    EXEC('CREATE SCHEMA bronze');
+END
+GO
+
+---------------------------------------------------------------
+-- Create Silver Schema
+-- Stores cleaned, standardized, and transformed data.
+---------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'silver')
+BEGIN
+    EXEC('CREATE SCHEMA silver');
+END
+GO
+
+---------------------------------------------------------------
+-- Create Gold Schema
+-- Stores business-ready data modeled for analytics.
+---------------------------------------------------------------
+IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = 'gold')
+BEGIN
+    EXEC('CREATE SCHEMA gold');
+END
+GO
+
+---------------------------------------------------------------
+-- Verify the schemas
+---------------------------------------------------------------
+SELECT name AS SchemaName
+FROM sys.schemas
+WHERE name IN ('bronze', 'silver', 'gold');
+GO
