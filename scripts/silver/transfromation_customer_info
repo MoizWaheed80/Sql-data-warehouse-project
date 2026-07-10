@@ -1,0 +1,70 @@
+/*--------------------------------------------------------------
+  Load Customer Information
+  Purpose:
+      - Load customer data from the Bronze layer into the Silver layer.
+      - Keep only the latest record for each customer.
+      - Clean and standardize the data before loading.
+--------------------------------------------------------------*/
+
+INSERT INTO silver.crm_customer_info
+(
+    cst_id,
+    cst_key,
+    cst_firstname,
+    cst_lastname,
+    cst_gndr,
+    cst_marital_status,
+    cst_create_date
+)
+
+SELECT
+    -- Customer ID
+    cst_id,
+
+    -- Customer Key
+    cst_key,
+
+    -- Remove leading and trailing spaces
+    TRIM(cst_firstname) AS cst_firstname,
+    TRIM(cst_lastname)  AS cst_lastname,
+
+    -- Convert gender codes into readable values
+    CASE
+        WHEN UPPER(TRIM(cst_gndr)) = 'M' THEN 'Male'
+        WHEN UPPER(TRIM(cst_gndr)) = 'F' THEN 'Female'
+        ELSE 'N/A'
+    END AS cst_gndr,
+
+    -- Convert marital status codes into readable values
+    CASE
+        WHEN UPPER(TRIM(cst_marital_status)) = 'S' THEN 'Single'
+        WHEN UPPER(TRIM(cst_marital_status)) = 'M' THEN 'Married'
+        ELSE 'N/A'
+    END AS cst_marital_status,
+
+    -- Customer record creation date
+    cst_create_date
+
+FROM
+(
+    SELECT
+        *,
+
+        -- Assign a row number to each customer.
+        -- The most recent record gets RowN = 1.
+        ROW_NUMBER() OVER
+        (
+            PARTITION BY cst_id
+            ORDER BY cst_create_date DESC
+        ) AS RowN
+
+    FROM bronze.crm_customer_info
+
+) AS t
+
+WHERE
+    -- Keep only the latest record for each customer
+    RowN = 1
+
+    -- Ignore records with a NULL customer ID
+    AND cst_id IS NOT NULL;
