@@ -58,6 +58,7 @@ GO
 CREATE TABLE silver.crm_product_info
 (
     prd_id          INT,
+    cat_id          NVARCHAR(50),
     prd_key         NVARCHAR(50),
     prd_name        NVARCHAR(80),
     prd_cost        INT,
@@ -66,7 +67,6 @@ CREATE TABLE silver.crm_product_info
     prd_end_dt      DATE,
     dwh_create_date     DATETIME2 Default GETDATE()
 );
-GO
 
 
 -- CRM Sales Details
