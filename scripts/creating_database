@@ -70,5 +70,3 @@ SELECT name AS SchemaName
 FROM sys.schemas
 WHERE name IN ('bronze', 'silver', 'gold');
 GO
-
-i prefer thinw way or any other clean way
