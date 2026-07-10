@@ -1,0 +1,74 @@
+/*
+=========================================================
+Load Product Data (Bronze → Silver)
+=========================================================
+Purpose:
+    - Load cleaned product data into the Silver layer.
+    - Extract Category ID from the Product Key.
+    - Remove the Category Prefix from the Product Key.
+    - Replace NULL Product Costs with 0.
+    - Standardize Product Line values.
+    - Calculate Product End Date using the next Product Start Date.
+=========================================================
+*/
+
+INSERT INTO silver.crm_product_info
+(
+    prd_id,
+    cat_id,
+    prd_key,
+    prd_name,
+    prd_cost,
+    prd_line,
+    prd_start_dt,
+    prd_end_dt
+)
+
+SELECT
+
+    -- Product ID
+    prd_id,
+
+    -- Extract Category ID
+    -- Example: AC-HE-12345 → AC_HE
+    REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id,
+
+    -- Remove Category Prefix
+    -- Example: AC-HE-12345 → 12345
+    SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key,
+
+    -- Product Name
+    prd_name,
+
+    -- Replace NULL Product Cost with 0
+    ISNULL(prd_cost, 0) AS prd_cost,
+
+    -- Convert Product Line Codes into Readable Values
+    CASE
+        WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
+        WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'
+        WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
+        WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
+        ELSE 'N/A'
+    END AS prd_line,
+
+    -- Convert Product Start Date to DATE
+    CAST(prd_start_dt AS DATE) AS prd_start_dt,
+
+    -- Calculate Product End Date
+    -- The end date is one day before the next product version begins.
+    -- DATEADD() is used because prd_start_dt is a DATE data type.
+    CAST(
+        DATEADD
+        (
+            DAY,
+            -1,
+            LEAD(prd_start_dt) OVER
+            (
+                PARTITION BY prd_key
+                ORDER BY prd_start_dt
+            )
+        ) AS DATE
+    ) AS prd_end_dt
+
+FROM bronze.crm_product_info;
