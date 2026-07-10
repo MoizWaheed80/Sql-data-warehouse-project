@@ -1,9 +1,12 @@
 /*
+===============================================================================
   Create Data Warehouse Database
+===============================================================================
   Description:
       - Checks if the database already exists.
       - Creates the database if it does not exist.
       - Creates Bronze, Silver, and Gold schemas.
+===============================================================================
 */
 
 -- Switch to the master database
