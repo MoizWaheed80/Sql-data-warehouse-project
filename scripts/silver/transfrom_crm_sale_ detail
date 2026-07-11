@@ -1,0 +1,69 @@
+/*
+=========================================================
+Transform CRM Sales Data (Bronze → Silver)
+=========================================================
+Purpose:
+    - Convert integer date values to DATE data type
+    - Replace invalid dates with NULL
+    - Validate and recalculate sales amount if incorrect
+    - Validate and recalculate price if missing or invalid
+=========================================================
+*/
+
+SELECT
+    -- Order Information
+    sls_ord_num,
+    sls_prd_key,
+    sls_cust_id,
+
+    -- Convert Order Date (YYYYMMDD → DATE)
+    CASE
+        WHEN sls_order_dt = 0
+             OR LEN(sls_order_dt) != 8
+            THEN NULL
+        ELSE CAST(CAST(sls_order_dt AS VARCHAR(8)) AS DATE)
+    END AS sls_order_dt,
+
+    -- Convert Ship Date (YYYYMMDD → DATE)
+    CASE
+        WHEN sls_ship_dt = 0
+             OR LEN(sls_ship_dt) != 8
+            THEN NULL
+        ELSE CAST(CAST(sls_ship_dt AS VARCHAR(8)) AS DATE)
+    END AS sls_ship_dt,
+
+    -- Convert Due Date (YYYYMMDD → DATE)
+    CASE
+        WHEN sls_due_dt = 0
+             OR LEN(sls_due_dt) != 8
+            THEN NULL
+        ELSE CAST(CAST(sls_due_dt AS VARCHAR(8)) AS DATE)
+    END AS sls_due_dt,
+
+    -- Calculate Sales Amount
+    -- Rule:
+    -- If Sales is NULL, negative, zero, or doesn't equal
+    -- Quantity × Price, recalculate it.
+    CASE
+        WHEN sls_sales IS NULL
+             OR sls_sales <= 0
+             OR sls_sales <> sls_quantity * ABS(sls_price)
+            THEN sls_quantity * ABS(sls_price)
+        ELSE sls_sales
+    END AS sls_sales,
+
+    -- Quantity Sold
+    sls_quantity,
+
+    -- Calculate Unit Price
+    -- Rule:
+    -- If Price is NULL or invalid,
+    -- calculate it as Sales ÷ Quantity.
+    CASE
+        WHEN sls_price IS NULL
+             OR sls_price <= 0
+            THEN sls_sales / NULLIF(sls_quantity, 0)
+        ELSE sls_price
+    END AS sls_price
+
+FROM bronze.crm_sale_detail;
