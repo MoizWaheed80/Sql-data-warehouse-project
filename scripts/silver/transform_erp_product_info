@@ -1,0 +1,29 @@
+/*
+=========================================================
+Load ERP Product Data (Bronze → Silver)
+=========================================================
+Purpose:
+    - Load product data from the Bronze layer
+    - No data transformations are required
+=========================================================
+*/
+
+-- Remove existing records
+TRUNCATE TABLE silver.erp_product_info;
+
+-- Load data from Bronze to Silver
+INSERT INTO silver.erp_product_info
+(
+    ID,
+    CAT,
+    SUBCAT,
+    MAINTENANCE
+)
+
+SELECT
+    ID,
+    CAT,
+    SUBCAT,
+    MAINTENANCE
+
+FROM bronze.erp_product_info;
