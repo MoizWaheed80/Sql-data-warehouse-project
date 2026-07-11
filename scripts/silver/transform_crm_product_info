@@ -34,7 +34,7 @@ SELECT
     SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key,
 
     -- Product Name
-    TRIM(prd_nm) AS prd_name,
+    prd_name,
 
     -- Replace NULL cost with 0
     ISNULL(prd_cost, 0) AS prd_cost,
