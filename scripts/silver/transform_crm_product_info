@@ -1,74 +1,130 @@
 /*
 =========================================================
-Load Product Data (Bronze → Silver)
+Create Silver Layer Tables
 =========================================================
 Purpose:
-    - Load cleaned product data into the Silver layer.
-    - Extract Category ID from the Product Key.
-    - Remove the Category Prefix from the Product Key.
-    - Replace NULL Product Costs with 0.
-    - Standardize Product Line values.
-    - Calculate Product End Date using the next Product Start Date.
+    Recreate all Silver layer tables.
+    - If a table already exists, drop it.
+    - Then create a fresh table.
 =========================================================
 */
 
-INSERT INTO silver.crm_product_info
+USE DataWarehouse;
+GO
+
+/*=========================================================
+Create Table: silver.crm_customer_info
+=========================================================*/
+IF OBJECT_ID('silver.crm_customer_info', 'U') IS NOT NULL
+    DROP TABLE silver.crm_customer_info;
+GO
+
+CREATE TABLE silver.crm_customer_info
 (
-    prd_id,
-    cat_id,
-    prd_key,
-    prd_name,
-    prd_cost,
-    prd_line,
-    prd_start_dt,
-    prd_end_dt
-)
+    cst_id              INT,
+    cst_key             NVARCHAR(50),
+    cst_firstname       NVARCHAR(50),
+    cst_lastname        NVARCHAR(50),
+    cst_gndr            NVARCHAR(10),
+    cst_marital_status  NVARCHAR(20),
+    cst_create_date     DATE,
 
-SELECT
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
 
-    -- Product ID
-    prd_id,
+/*=========================================================
+Create Table: silver.crm_product_info
+=========================================================*/
+IF OBJECT_ID('silver.crm_product_info', 'U') IS NOT NULL
+    DROP TABLE silver.crm_product_info;
+GO
 
-    -- Extract Category ID
-    -- Example: AC-HE-12345 → AC_HE
-    REPLACE(SUBSTRING(prd_key, 1, 5), '-', '_') AS cat_id,
+CREATE TABLE silver.crm_product_info
+(
+    prd_id              INT,
+    cat_id              NVARCHAR(50),
+    prd_key             NVARCHAR(50),
+    prd_name            NVARCHAR(100),
+    prd_cost            DECIMAL(18,2),
+    prd_line            NVARCHAR(20),
+    prd_start_dt        DATE,
+    prd_end_dt          DATE,
 
-    -- Remove Category Prefix
-    -- Example: AC-HE-12345 → 12345
-    SUBSTRING(prd_key, 7, LEN(prd_key)) AS prd_key,
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
 
-    -- Product Name
-    prd_name,
+/*=========================================================
+Create Table: silver.crm_sales_details
+=========================================================*/
+IF OBJECT_ID('silver.crm_sales_details', 'U') IS NOT NULL
+    DROP TABLE silver.crm_sales_details;
+GO
 
-    -- Replace NULL Product Cost with 0
-    ISNULL(prd_cost, 0) AS prd_cost,
+CREATE TABLE silver.crm_sales_details
+(
+    sls_ord_num         NVARCHAR(50),
+    sls_prd_key         NVARCHAR(50),
+    sls_cust_id         INT,
+    sls_order_dt        DATE,
+    sls_ship_dt         DATE,
+    sls_due_dt          DATE,
+    sls_sales           DECIMAL(18,2),
+    sls_quantity        INT,
+    sls_price           DECIMAL(18,2),
 
-    -- Convert Product Line Codes into Readable Values
-    CASE
-        WHEN UPPER(TRIM(prd_line)) = 'R' THEN 'Road'
-        WHEN UPPER(TRIM(prd_line)) = 'M' THEN 'Mountain'
-        WHEN UPPER(TRIM(prd_line)) = 'S' THEN 'Other Sales'
-        WHEN UPPER(TRIM(prd_line)) = 'T' THEN 'Touring'
-        ELSE 'N/A'
-    END AS prd_line,
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
 
-    -- Convert Product Start Date to DATE
-    CAST(prd_start_dt AS DATE) AS prd_start_dt,
+/*=========================================================
+Create Table: silver.erp_customer_az12
+=========================================================*/
+IF OBJECT_ID('silver.erp_customer_az12', 'U') IS NOT NULL
+    DROP TABLE silver.erp_customer_az12;
+GO
 
-    -- Calculate Product End Date
-    -- The end date is one day before the next product version begins.
-    -- DATEADD() is used because prd_start_dt is a DATE data type.
-    CAST(
-        DATEADD
-        (
-            DAY,
-            -1,
-            LEAD(prd_start_dt) OVER
-            (
-                PARTITION BY prd_key
-                ORDER BY prd_start_dt
-            )
-        ) AS DATE
-    ) AS prd_end_dt
+CREATE TABLE silver.erp_customer_az12
+(
+    cid                 NVARCHAR(50),
+    bdate               DATE,
+    gen                 NVARCHAR(10),
 
-FROM bronze.crm_product_info;
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+/*=========================================================
+Create Table: silver.erp_location_a101
+=========================================================*/
+IF OBJECT_ID('silver.erp_location_a101', 'U') IS NOT NULL
+    DROP TABLE silver.erp_location_a101;
+GO
+
+CREATE TABLE silver.erp_location_a101
+(
+    cid                 NVARCHAR(50),
+    cntry               NVARCHAR(50),
+
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
+
+/*=========================================================
+Create Table: silver.erp_product_info
+=========================================================*/
+IF OBJECT_ID('silver.erp_product_info', 'U') IS NOT NULL
+    DROP TABLE silver.erp_product_info;
+GO
+
+CREATE TABLE silver.erp_product_info
+(
+    id                  NVARCHAR(50),
+    cat                 NVARCHAR(50),
+    subcat              NVARCHAR(50),
+    maintenance         NVARCHAR(20),
+
+    dwh_create_date     DATETIME2 DEFAULT GETDATE()
+);
+GO
