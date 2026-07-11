@@ -1,0 +1,49 @@
+/*
+=========================================================
+Load ERP Customer Data (Bronze → Silver)
+=========================================================
+Purpose:
+    - Remove the 'NAS' prefix from customer IDs
+    - Replace future birth dates with NULL
+    - Standardize gender values
+=========================================================
+*/
+
+INSERT INTO silver.erp_customer_info
+(
+    CID,
+    BDATE,
+    GEN
+)
+
+SELECT
+
+    -- Remove 'NAS' prefix from Customer ID
+    CASE
+        WHEN CID LIKE 'NAS%'
+            THEN SUBSTRING(CID, 4, LEN(CID))
+        ELSE CID
+    END AS CID,
+
+    -- Replace invalid future birth dates with NULL
+    CASE
+        WHEN BDATE > GETDATE()
+            THEN NULL
+        ELSE BDATE
+    END AS BDATE,
+
+    -- Standardize Gender Values
+    -- F, Female  → Female
+    -- M, Male    → Male
+    -- All others → N/A
+    CASE
+        WHEN UPPER(TRIM(GEN)) IN ('F', 'FEMALE')
+            THEN 'Female'
+
+        WHEN UPPER(TRIM(GEN)) IN ('M', 'MALE')
+            THEN 'Male'
+
+        ELSE 'N/A'
+    END AS GEN
+
+FROM bronze.erp_customer_info;
