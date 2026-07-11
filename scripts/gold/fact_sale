@@ -1,0 +1,40 @@
+/*
+=========================================================
+Create Sales Fact View (Gold Layer)
+=========================================================
+Purpose:
+    - Create the sales fact table for reporting
+    - Link sales transactions to customer and product dimensions
+    - Store business measures such as sales, quantity, and price
+=========================================================
+*/
+
+CREATE VIEW gold.fact_sale AS
+
+SELECT
+    -- Sales identifier
+    csd.sls_ord_num AS sales_key,
+
+    -- Dimension surrogate keys
+    dp.product_key AS product_key,
+    dc.customer_key AS customer_key,
+
+    -- Order dates
+    csd.sls_order_dt AS order_date,
+    csd.sls_ship_dt AS ship_date,
+    csd.sls_due_dt AS due_date,
+
+    -- Sales measures
+    csd.sls_sales AS sales,
+    csd.sls_quantity AS quantity,
+    csd.sls_price AS price
+
+FROM silver.crm_sales_details AS csd
+
+-- Join Customer Dimension
+LEFT JOIN gold.dim_customer AS dc
+    ON csd.sls_cust_id = dc.customer_id
+
+-- Join Product Dimension
+LEFT JOIN gold.dim_product AS dp
+    ON csd.sls_prd_key = dp.product_number;
