@@ -1,0 +1,46 @@
+/*
+=========================================================
+Create Customer Dimension View (Gold Layer)
+=========================================================
+Purpose:
+    - Create the customer dimension for reporting
+    - Generate a surrogate customer key
+    - Combine customer data from CRM and ERP systems
+    - Resolve gender using CRM first, then ERP if missing
+    - Include customer demographic and location information
+=========================================================
+*/
+
+CREATE VIEW gold.dim_customer AS
+
+SELECT
+    -- Surrogate key
+    ROW_NUMBER() OVER (ORDER BY ci.cst_id) AS customer_key,
+
+    -- Business keys
+    ci.cst_id AS customer_id,
+    ci.cst_key AS customer_number,
+
+    -- Customer details
+    ci.cst_firstname AS first_name,
+    ci.cst_lastname AS last_name,
+    eci.BDATE AS birth_date,
+
+    -- Use CRM gender when available, otherwise ERP gender
+    CASE
+        WHEN ci.cst_gndr != 'N/A' THEN ci.cst_gndr
+        ELSE COALESCE(eci.GEN, 'N/A')
+    END AS gender,
+
+    -- Customer attributes
+    ci.cst_marital_status AS marital_status,
+    eli.CNTRY AS country,
+    ci.cst_create_date AS create_date
+
+FROM silver.crm_customer_info AS ci
+
+LEFT JOIN silver.erp_customer_info AS eci
+    ON ci.cst_key = eci.CID
+
+LEFT JOIN silver.erp_location_info AS eli
+    ON ci.cst_key = eli.CID;
