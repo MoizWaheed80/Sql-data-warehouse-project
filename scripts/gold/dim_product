@@ -1,0 +1,40 @@
+/*
+=========================================================
+Create Product Dimension View (Gold Layer)
+=========================================================
+Purpose:
+    - Create the product dimension for reporting
+    - Generate a surrogate product key
+    - Combine product data from CRM and ERP systems
+    - Include only the current (active) product records
+=========================================================
+*/
+
+CREATE VIEW gold.dim_product AS
+
+SELECT
+    -- Surrogate key
+    ROW_NUMBER() OVER (ORDER BY cpi.prd_start_dt, cpi.prd_id) AS product_key,
+
+    -- Business keys
+    cpi.prd_id AS product_id,
+    cpi.prd_key AS product_number,
+
+    -- Product details
+    cpi.prd_name AS product_name,
+    epi.cat AS category,
+    epi.subcat AS sub_category,
+    cpi.prd_line AS product_line,
+    epi.maintenance AS product_maintenance,
+
+    -- Product attributes
+    cpi.prd_cost AS product_cost,
+    cpi.prd_start_dt AS product_date
+
+FROM silver.crm_product_info AS cpi
+
+INNER JOIN silver.erp_product_info AS epi
+    ON cpi.cat_id = epi.id
+
+-- Keep only the current active product records
+WHERE cpi.prd_end_dt IS NULL;
