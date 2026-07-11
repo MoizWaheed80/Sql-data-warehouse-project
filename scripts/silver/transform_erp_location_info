@@ -1,0 +1,38 @@
+/*
+=========================================================
+Load ERP Location Data (Bronze → Silver)
+=========================================================
+Purpose:
+    - Remove hyphens from Customer IDs
+    - Standardize country names
+    - Replace NULL or blank country values with 'N/A'
+=========================================================
+*/
+
+INSERT INTO silver.erp_location_info
+(
+    CID,
+    CNTRY
+)
+
+SELECT
+
+    -- Remove hyphens from Customer ID
+    REPLACE(CID, '-', '') AS CID,
+
+    -- Standardize Country Values
+    CASE
+        WHEN CNTRY IS NULL
+             OR TRIM(CNTRY) = ''
+            THEN 'N/A'
+
+        WHEN UPPER(TRIM(CNTRY)) IN ('US', 'USA')
+            THEN 'United States'
+
+        WHEN UPPER(TRIM(CNTRY)) = 'DE'
+            THEN 'Germany'
+
+        ELSE TRIM(CNTRY)
+    END AS CNTRY
+
+FROM bronze.erp_location_info;
