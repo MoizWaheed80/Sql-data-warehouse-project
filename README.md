@@ -8,12 +8,11 @@ The project follows industry best practices in **Data Engineering**, **Data Ware
 
 ---
 
-## 🏗️ Data Architecture
+## Data Architecture
 
 The solution follows a structured 3-tier architecture (inspired by the Medallion Architecture), mapping raw source data into a business-ready analytical model:
 
 ![Data Flow Diagram](docs/data_flow.png)
-*(Note: Ensure `data_flow.png` is present in the `docs/` folder for this image to render)*
 
 ### 1. Staging Layer (Raw Data)
 * **Purpose:** Serves as the landing zone for all source data.
@@ -28,7 +27,6 @@ The solution follows a structured 3-tier architecture (inspired by the Medallion
 * **Function:** Implements a highly optimized **Star Schema** using Fact and Dimension tables. This layer is specifically designed to power reporting, dashboards, and complex analytical queries.
 
 ![Star Schema Data Model](docs/data_model.png)
-*(Note: Ensure `data_model.png` is present in the `docs/` folder for this image to render)*
 
 ---
 
